@@ -24,17 +24,18 @@ int rollDice()
 
 int main()
 {
-    const int racesToRun = 100000;
+    const int racesToRun = 1000000;
     const int horsesToScratch = 4;
     bool highStakes = false;
     
     enum PrintLevel
     {
         summary,
-        stats
+        statsSummary,
+        statsToImport
     };
     
-    int printLevel = stats;
+    int printLevel = statsSummary;
 
     srand(time(NULL));
 
@@ -56,15 +57,16 @@ int main()
     };
     
     int horsePosition[numHorses];
-    int timesWon[numHorses];
+    int timesHorseWon[numHorses];
+    int potSizeForHorse[numHorses];
     for(int horseIndex = 0; horseIndex < numHorses; horseIndex++)
     {
         horsePosition[horseIndex] = 0;
-        timesWon[horseIndex] = 0;
+        timesHorseWon[horseIndex] = 0;
     }
     
     int racesRun = 0;
-    int potSize = 0;
+    int racePotSize = 0, minPotSize = 0, maxPotSize = 0, totalPotSize = 0;
     
     while(racesRun < racesToRun)
     {
@@ -90,17 +92,17 @@ int main()
                 horsesScratched += 1;
                 horsePosition[scratchedHorseIndex] -= horsesScratched;
                 
-                potSize += (highStakes ? (horsesScratched * 4) : 4);
+                racePotSize += (highStakes ? (horsesScratched * 4) : 4);
             }
             else
             {
                 if(highStakes)
                 {
-                    potSize -= horsePosition[scratchedHorseIndex];
+                    racePotSize -= horsePosition[scratchedHorseIndex];
                 }
                 else
                 {
-                    potSize += 1;
+                    racePotSize += 1;
                 }
             }
         }
@@ -119,7 +121,21 @@ int main()
                 horsePosition[rolledHorseIndex] += 1;
                 if(horsePosition[rolledHorseIndex] == rollsToWin[rolledHorseIndex])
                 {
+                    // We have a winner!!!
                     winningHorseNumber = rolledDiceSum;
+                    timesHorseWon[rolledHorseIndex] += 1;
+                    potSizeForHorse[rolledHorseIndex] += racePotSize;
+                    totalPotSize += racePotSize;
+                    
+                    if(racePotSize > maxPotSize)
+                    {
+                        maxPotSize = racePotSize;
+                    }
+                    if(minPotSize == 0 || racePotSize < minPotSize)
+                    {
+                        minPotSize = racePotSize;
+                    }
+                
                     winner = true;
                 }
             }
@@ -127,11 +143,11 @@ int main()
             {
                 if(highStakes)
                 {
-                    potSize -= horsePosition[rolledHorseIndex];
+                    racePotSize -= horsePosition[rolledHorseIndex];
                 }
                 else
                 {
-                    potSize += 1;
+                    racePotSize += 1;
                 }
             }
         }
@@ -140,7 +156,7 @@ int main()
         {
             cout << endl << "Winning Horse Number = " << winningHorseNumber << "!!!" << endl << endl;
         }
-        else if(printLevel == stats)
+        else if(printLevel == statsToImport)
         {
             cout << winningHorseNumber;
         }
@@ -171,15 +187,32 @@ int main()
         
         if(printLevel == summary)
         {
-            cout << "Total pot size for this race was " << potSize << "!!!" << endl;
+            cout << "Total pot size for this race was " << racePotSize << "!!!" << endl;
         }
-        else if(printLevel == stats)
+        else if(printLevel == statsToImport)
         {
-            cout << "\t" << potSize << endl;
+            cout << "\t" << racePotSize << endl;
+        }
+
+        racePotSize = 0;
+        racesRun++;
+    }
+
+    if(printLevel == statsSummary)
+    {
+        for(int horseIndex = 0; horseIndex < numHorses; horseIndex++)
+        {
+            int horseNum = horseIndex + 2;
+    
+            cout << "Horse " << horseNum << " won the race " << timesHorseWon[horseIndex] << " times ("
+                << ((timesHorseWon[horseIndex] * 100) / racesRun) << "%) with an average pot size of " 
+                << (timesHorseWon[horseIndex] ? (potSizeForHorse[horseIndex] / timesHorseWon[horseIndex]) : 0) << " (" << ((potSizeForHorse[horseIndex] * 100) / totalPotSize) << "%)!!!" << endl;
         }
         
-        potSize = 0;
-        racesRun++;
+        cout << endl;
+        cout << "Max pot size was " << maxPotSize << endl;
+        cout << "Average pot size per race was " << totalPotSize / racesRun << endl;
+        cout << "Min pot size was " << minPotSize << endl;
     }
 
     return 0;
